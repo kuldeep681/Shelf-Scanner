@@ -105,7 +105,8 @@ Lightweight and fast — no heavy ML required.
 
 ## 📁 **Project Folder Structure**
 
-```shelfscanner/
+```bash
+shelfscanner/
 │
 ├── backend/
 │ ├── main.py # FastAPI backend + OCR + Routes
