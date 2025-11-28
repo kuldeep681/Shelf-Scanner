@@ -4,8 +4,8 @@ from fastapi import FastAPI, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from PIL import Image
-import pytesseract
 import easyocr
+import numpy as np
 import io
 import requests
 
@@ -17,7 +17,7 @@ load_dotenv()
 app = FastAPI()
 
 # ------------------------------------------------------
-# CORS (Required for Streamlit Frontend)
+# CORS
 # ------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
@@ -27,35 +27,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ------------------------------------------------------
+# GLOBAL EASYOCR READER (Loaded once → Fast!)
+# ------------------------------------------------------
+reader = easyocr.Reader(["en"], gpu=False)
+
 
 # ------------------------------------------------------
-# OCR Function with Tesseract → EasyOCR fallback
+# FAST OCR FUNCTION (No Tesseract, Resize Image)
 # ------------------------------------------------------
 def extract_text(image_bytes):
-    tesseract_cmd = os.getenv("TESSERACT_CMD")
 
-    # Try Tesseract first
+    # Load image
+    img = Image.open(io.BytesIO(image_bytes))
+
+    # Resize to speed up OCR
+    max_size = 1024
+    img.thumbnail((max_size, max_size), Image.LANCZOS)
+
+    img_np = np.array(img)
+
+    # OCR
     try:
-        if tesseract_cmd:
-            pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
-
-        img = Image.open(io.BytesIO(image_bytes))
-        text = pytesseract.image_to_string(img)
-
-        if text.strip():
-            return text
-
+        result = reader.readtext(img_np, detail=0)
+        text = "\n".join(result)
+        print("Extracted text:", text)
+        return text
     except Exception as e:
-        print("⚠ Tesseract failed, switching to EasyOCR:", e)
-
-    # Fallback to EasyOCR
-    try:
-        reader = easyocr.Reader(['en'], gpu=False)
-        result = reader.readtext(image_bytes, detail=0)
-        return " ".join(result)
-
-    except Exception as e:
-        print("❌ EasyOCR also failed:", e)
+        print("❌ EasyOCR failed:", e)
         return ""
 
 
@@ -94,45 +93,37 @@ def fetch_book_data(title):
 # API: Scan Shelf Image
 # ------------------------------------------------------
 @app.post("/api/scan")
-async def scan_shelf(image: UploadFile = File(...), request: Request = None):
+async def scan_shelf(image: UploadFile = File(...)):
 
     image_bytes = await image.read()
 
-    # 1. Extract text
-    extracted_text = extract_text(image_bytes)
-    if not extracted_text.strip():
+    # 1. Extract OCR text
+    extracted = extract_text(image_bytes)
+    if not extracted.strip():
         return {"error": "Could not extract text from image."}
 
-    # 2. Process OCR lines into book titles
     possible_titles = [
-        line.strip() for line in extracted_text.split("\n")
+        line.strip() for line in extracted.split("\n")
         if len(line.strip()) > 3
     ]
 
-    # 3. Fetch book details
+    # 2. Fetch book details
     books = []
     for title in possible_titles:
         data = fetch_book_data(title)
         if data:
             books.append(data)
 
-    # 4. Save to MongoDB
+    # 3. Save to MongoDB
     collection = get_books_collection()
     if books:
         result = collection.insert_many(books)
         ids = result.inserted_ids
-
-        # Convert MongoDB ObjectId to string
         for idx, _id in enumerate(ids):
             books[idx]["_id"] = str(_id)
 
-    # 5. Recommend books
+    # 4. Recommendations
     recommendations = recommend_books(books)
-
-    # Final cleanup: ensure JSON-safe
-    for book in books:
-        if "_id" in book and not isinstance(book["_id"], str):
-            book["_id"] = str(book["_id"])
 
     return {
         "extracted_titles": possible_titles,
@@ -140,8 +131,9 @@ async def scan_shelf(image: UploadFile = File(...), request: Request = None):
         "recommended": recommendations
     }
 
+
 # ------------------------------------------------------
-# Root Route (Test)
+# Root Route
 # ------------------------------------------------------
 @app.get("/")
 def root():
@@ -149,7 +141,7 @@ def root():
 
 
 # ------------------------------------------------------
-# Run Backend
+# Run Server (local only)
 # ------------------------------------------------------
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

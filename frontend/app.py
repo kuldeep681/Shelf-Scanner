@@ -6,7 +6,7 @@ import io
 st.set_page_config(page_title="ShelfScanner", page_icon="📚", layout="centered")
 
 # -------------------------------
-# API Base URL (local or cloud)
+# API Base URL
 # -------------------------------
 API_BASE_URL = st.secrets["API_BASE_URL"]
 
@@ -19,56 +19,56 @@ st.write("Upload a shelf image and extract book information automatically.")
 uploaded_file = st.file_uploader("Upload an image of your bookshelf", type=["jpg", "jpeg", "png"])
 
 if uploaded_file:
-    # Show the image preview
-    image = Image.open(uploaded_file)
-    st.image(image, caption="Uploaded Image", use_column_width=True)
+    # Preview image
+    st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
 
-    # Submit button
     if st.button("Scan Shelf"):
         with st.spinner("Scanning your shelf... ⏳"):
 
-            # Send file to FastAPI
-            files = {"image": uploaded_file.getvalue()}
             try:
-                response = requests.post(f"{API_BASE_URL}/api/scan", files=files)
+                files = {"image": uploaded_file.getvalue()}
+
+                # -------------------------------
+                # SEND TO BACKEND WITH TIMEOUT
+                # -------------------------------
+                response = requests.post(
+                    f"{API_BASE_URL}/api/scan",
+                    files=files,
+                    timeout=300
+                )
 
                 if response.status_code != 200:
                     st.error("Error from API: " + response.text)
                 else:
                     data = response.json()
 
-                    # -------------------------------
-                    # Extracted Titles
-                    # -------------------------------
+                    # Extracted titles
                     st.subheader("📌 Extracted Text (Possible Book Titles)")
-                    if data["extracted_titles"]:
-                        st.write(data["extracted_titles"])
+                    titles = data.get("extracted_titles", [])
+                    if titles:
+                        st.write(titles)
                     else:
                         st.warning("No readable text detected.")
 
-                    # -------------------------------
                     # Books Found
-                    # -------------------------------
                     st.subheader("📚 Books Found")
-                    books = data["books_found"]
+                    books = data.get("books_found", [])
 
                     if books:
                         for book in books:
                             st.markdown("---")
-                            st.write(f"*Title:* {book.get('title', 'N/A')}")
-                            st.write(f"*Authors:* {book.get('authors', ['N/A'])}")
-                            st.write(f"*Categories:* {book.get('categories', ['N/A'])}")
+                            st.write(f"*Title:* {book.get('title','N/A')}")
+                            st.write(f"*Authors:* {book.get('authors',['N/A'])}")
+                            st.write(f"*Categories:* {book.get('categories',['N/A'])}")
 
                             if book.get("thumbnail"):
                                 st.image(book["thumbnail"], width=120)
                     else:
-                        st.warning("No matching books found in Google Books API.")
+                        st.warning("No matching books found.")
 
-                    # -------------------------------
                     # Recommendations
-                    # -------------------------------
                     st.subheader("⭐ Recommended Books")
-                    recs = data["recommended"]
+                    recs = data.get("recommended", [])
 
                     if recs:
                         for r in recs:
