@@ -102,21 +102,15 @@ with st.sidebar:
 
     if bookmarks:
         for b in bookmarks:
-            st.write(f"{b.get('title')}")
-            st.caption(", ".join(b.get("authors", [])))
+            st.write(b.get("title", "Untitled"))
 
-            # REMOVE ONE BOOKMARK
-            if st.button("🗑 Remove", key=f"rm_{b['_id']}"):
-                requests.delete(
-                    f"{API_BASE_URL}/api/bookmark/{USER_ID}/{b['_id']}"
-                )
-                st.rerun()
-
-        # CLEAR ALL
-        if st.button("❌ Clear All Bookmarks", key="clear_all"):
-            requests.delete(f"{API_BASE_URL}/api/bookmarks/clear/{USER_ID}")
-            st.rerun()
-
+            authors = b.get("authors")
+            if isinstance(authors, list):
+                st.caption(", ".join(authors))
+            elif isinstance(authors, str):
+                st.caption(authors)
+            else:
+                st.caption("Unknown author")
     else:
         st.info("No bookmarks yet.")
 
