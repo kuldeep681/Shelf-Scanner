@@ -1,142 +1,112 @@
 import streamlit as st
 import requests
 from PIL import Image
-import io
 
-st.set_page_config(page_title="ShelfScanner", page_icon="📚", layout="wide")
+st.set_page_config(page_title="ShelfScanner", page_icon="📚", layout="centered")
 
+# --------------------------------
+# API URL
+# --------------------------------
 API_BASE_URL = st.secrets["API_BASE_URL"]
 
-# ---------------------------------------------------------
-# 🔥 HERO HEADER (Modern + Animated)
-# ---------------------------------------------------------
-st.markdown(
-    """
-    <div style="padding:40px 0; text-align:center;">
-        <h1 style="font-size:60px; margin-bottom:0;">📚 ShelfScanner</h1>
-        <p style="font-size:22px; opacity:0.8;">Scan your bookshelf, discover books, and explore recommendations.</p>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+# --------------------------------
+# HERO HEADER
+# --------------------------------
+st.markdown("""
+<div style="text-align:center; padding: 20px 0;">
+    <h1 style="color:#ffce00; font-size:48px; margin-bottom:-10px;">📚 ShelfScanner</h1>
+    <p style="font-size:18px; color:#dcdcdc;">Scan your bookshelf and get instant book insights.</p>
+</div>
+""", unsafe_allow_html=True)
 
-# ---------------------------------------------------------
-# Upload
-# ---------------------------------------------------------
-uploaded_file = st.file_uploader(
-    "Upload an image of your bookshelf",
-    type=["jpg", "jpeg", "png"],
-)
+# --------------------------------
+# File Upload
+# --------------------------------
+uploaded = st.file_uploader("Upload a bookshelf image", type=["jpg", "jpeg", "png"])
 
-if uploaded_file:
-    st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
+if uploaded:
+    st.image(uploaded, use_column_width=True)
+    st.markdown("<br>", unsafe_allow_html=True)
 
-    if st.button("Scan Shelf"):
-        with st.spinner("🔍 Extracting text... This may take a moment."):
+    if st.button("🔍 Scan Shelf", use_container_width=True):
+        with st.spinner("Scanning... Please wait ⏳"):
 
-            files = {"image": uploaded_file.getvalue()}
+            try:
+                files = {"image": uploaded.getvalue()}
+                response = requests.post(
+                    f"{API_BASE_URL}/api/scan",
+                    files=files,
+                    timeout=400
+                )
 
-            # API Call
-            response = requests.post(
-                f"{API_BASE_URL}/api/scan",
-                files=files,
-                timeout=400
-            )
-
-            if response.status_code != 200:
-                st.error("Error from API: " + response.text)
-            else:
-                data = response.json()
-
-                # ---------------------------------------------------------
-                # 🎯 Extracted Titles
-                # ---------------------------------------------------------
-                st.subheader("📌 Extracted Titles")
-                titles = data.get("extracted_titles", [])
-                if titles:
-                    st.success("Text extracted successfully! 🎉")
-                    st.write(titles)
+                if response.status_code != 200:
+                    st.error("Error: " + response.text)
                 else:
-                    st.warning("No readable text detected.")
+                    data = response.json()
 
-                # ---------------------------------------------------------
-                # 🔍 SEARCH BAR FOR BOOK RESULTS
-                # ---------------------------------------------------------
-                st.subheader("🔎 Search Books")
-                search_query = st.text_input("Search by title or author")
+                    # --------------------------------
+                    # Extracted Titles Section
+                    # --------------------------------
+                    titles = data.get("extracted_titles", [])
+                    if titles:
+                        st.markdown("<hr style='border:1px solid #ffce00;'>", unsafe_allow_html=True)
+                        st.subheader("📌 Extracted Text (Possible Titles)")
+                        st.write(titles)
+                    else:
+                        st.warning("No readable text detected.")
 
-                # ---------------------------------------------------------
-                # 📚 Books Found (Modern Card UI)
-                # ---------------------------------------------------------
-                st.subheader("📚 Books Found")
+                    # --------------------------------
+                    # Books Found Section
+                    # --------------------------------
+                    books = data.get("books_found", [])
 
-                books = data.get("books_found", [])
+                    if books:
+                        st.markdown("<hr style='border:1px solid #ffce00;'>", unsafe_allow_html=True)
+                        st.subheader("📚 Books Found")
 
-                if books:
-                    for book in books:
+                        for book in books:
+                            st.markdown("""
+                                <div style="padding:15px; border-radius:10px; background-color:#1f1f1f; margin-bottom:15px;">
+                            """, unsafe_allow_html=True)
 
-                        # Apply search filter
-                        if search_query:
-                            if search_query.lower() not in str(book).lower():
-                                continue
+                            cols = st.columns([1, 3])
+                            with cols[0]:
+                                if book.get("thumbnail"):
+                                    st.image(book["thumbnail"], width=120)
 
-                        st.markdown(
-                            """
-                            <div style="
-                                border-radius: 12px;
-                                padding: 20px;
-                                margin: 15px 0;
-                                background: #ffffff;
-                                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                            ">
-                            """,
-                            unsafe_allow_html=True
-                        )
+                            with cols[1]:
+                                st.markdown(f"### *{book.get('title','N/A')}*")
+                                st.write(f"*Authors:* {book.get('authors','N/A')}")
+                                st.write(f"*Categories:* {book.get('categories','N/A')}")
 
-                        cols = st.columns([1, 3])
-                        with cols[0]:
-                            if book.get("thumbnail"):
-                                st.image(book["thumbnail"], width=120)
-                            else:
-                                st.write("No image")
+                                # Description toggle
+                                if book.get("description"):
+                                    with st.expander("📖 Description"):
+                                        st.write(book["description"])
 
-                        with cols[1]:
-                            st.markdown(f"### {book.get('title','N/A')}")
-                            st.markdown(f"*Authors:* {book.get('authors',['N/A'])}")
-                            st.markdown(f"*Categories:* {book.get('categories',['N/A'])}")
+                            st.markdown("</div>", unsafe_allow_html=True)
 
-                            desc = book.get("description", "")
-                            if desc:
-                                with st.expander("📄 Description"):
-                                    st.write(desc)
+                    else:
+                        st.warning("No matching books found.")
 
-                        st.markdown("</div>", unsafe_allow_html=True)
+                    # --------------------------------
+                    # Recommended Books Section
+                    # --------------------------------
+                    recommendations = data.get("recommended", [])
 
-                else:
-                    st.warning("No books found.")
+                    if recommendations:
+                        st.markdown("<hr style='border:1px solid #ffce00;'>", unsafe_allow_html=True)
+                        st.subheader("⭐ Recommended Books")
 
-                # ---------------------------------------------------------
-                # ⭐ Recommendations
-                # ---------------------------------------------------------
-                st.subheader("⭐ Recommended Books")
+                        for rec in recommendations:
+                            st.markdown("""
+                                <div style="padding:15px; border-radius:10px; background-color:#232323; margin-bottom:10px;">
+                            """, unsafe_allow_html=True)
 
-                recs = data.get("recommended", [])
+                            st.write(f"*Title:* {rec.get('title')}")
+                            st.write(f"*Authors:* {rec.get('authors')}")
 
-                if recs:
-                    for r in recs:
-                        st.markdown(
-                            f"""
-                            <div style="
-                                border-radius: 12px;
-                                padding: 15px;
-                                background: #f7f7f7;
-                                margin-bottom: 10px;
-                            ">
-                                <strong>{r.get('title')}</strong><br>
-                                <span style="opacity:0.7;">{r.get('authors')}</span>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                else:
-                    st.info("No recommendations yet — scan more books!")
+                            st.markdown("</div>", unsafe_allow_html=True)
+
+            except Exception as e:
+                st.error(f"Error: {e}")
