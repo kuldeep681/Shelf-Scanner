@@ -125,34 +125,33 @@ st.markdown("""
 
 <script>
 
-// Correctly target parent document
-const bodyEl = window.parent.document.querySelector("body");
+// Get the actual Streamlit app container
+const appRoot = window.parent.document.querySelector('.stApp');
 
+// Toggle theme function
 function toggleTheme() {
-    let ballEl = window.parent.document.getElementById("ball");
+    let ball = window.parent.document.getElementById("ball");
 
-    let current = bodyEl.getAttribute("data-theme");
+    let theme = appRoot.getAttribute("data-theme");
 
-    if (!current || current === "dark") {
-        bodyEl.setAttribute("data-theme","light");
-        ballEl.style.transform = "translateX(0px)";
-        ballEl.innerHTML = "☀";
-    } 
-    else {
-        bodyEl.setAttribute("data-theme","dark");
-        ballEl.style.transform = "translateX(32px)";
-        ballEl.innerHTML = "🌙";
+    if (!theme || theme === "dark") {
+        appRoot.setAttribute("data-theme","light");
+        ball.style.transform = "translateX(0px)";
+        ball.innerHTML = "☀";
+    } else {
+        appRoot.setAttribute("data-theme","dark");
+        ball.style.transform = "translateX(32px)";
+        ball.innerHTML = "🌙";
     }
 }
 
-// Force default theme once
+// Set DARK as default theme
 setTimeout(() => {
-    bodyEl.setAttribute("data-theme","dark");
+    appRoot.setAttribute("data-theme","dark");
 }, 200);
 
 </script>
 """, unsafe_allow_html=True)
-
 
 # ---------------------------------------------------
 # HEADER
