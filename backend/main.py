@@ -4,13 +4,13 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import requests
+from bson import ObjectId
 
 from db import get_books_collection, get_bookmarks_collection
 from recommender import recommend_books
 
 
 load_dotenv()
-
 app = FastAPI()
 
 # ------------------------------------------------------
@@ -29,10 +29,9 @@ app.add_middleware(
 # ------------------------------------------------------
 OCR_API_KEY = os.getenv("OCR_API_KEY")
 
-def extract_text(image_bytes):
-    """ OCR.Space Cloud OCR """
-    url = "https://api.ocr.space/parse/image"
 
+def extract_text(image_bytes):
+    url = "https://api.ocr.space/parse/image"
     files = {"file": ("image.jpg", image_bytes, "image/jpeg")}
     data = {
         "apikey": OCR_API_KEY,
@@ -40,7 +39,7 @@ def extract_text(image_bytes):
         "OCREngine": 2,
         "scale": True,
         "isTable": False,
-        "detectOrientation": True,
+        "detectOrientation": True
     }
 
     try:
@@ -63,6 +62,7 @@ def extract_text(image_bytes):
 # ------------------------------------------------------
 GOOGLE_BOOKS_API_KEY = os.getenv("GOOGLE_BOOKS_API_KEY", "")
 
+
 def fetch_book_data(title):
     params = {"q": title, "maxResults": 1}
     if GOOGLE_BOOKS_API_KEY:
@@ -84,24 +84,25 @@ def fetch_book_data(title):
         "authors": volume.get("authors"),
         "thumbnail": volume.get("imageLinks", {}).get("thumbnail"),
         "categories": volume.get("categories"),
-        "description": volume.get("description"),
+        "description": volume.get("description")
     }
 
 
 # ------------------------------------------------------
-# API: SCAN IMAGE
+# SCAN SHELF
 # ------------------------------------------------------
 @app.post("/api/scan")
 async def scan_shelf(image: UploadFile = File(...)):
-
     image_bytes = await image.read()
-
     extracted = extract_text(image_bytes)
+
     if not extracted.strip():
         return {"error": "Could not extract text from image."}
 
     possible_titles = [
-        line.strip() for line in extracted.split("\n") if len(line.strip()) > 3
+        line.strip()
+        for line in extracted.split("\n")
+        if len(line.strip()) > 3
     ]
 
     books = []
@@ -121,7 +122,7 @@ async def scan_shelf(image: UploadFile = File(...)):
     return {
         "extracted_titles": possible_titles,
         "books_found": books,
-        "recommended": recommendations,
+        "recommended": recommendations
     }
 
 
@@ -129,10 +130,10 @@ async def scan_shelf(image: UploadFile = File(...)):
 # ⭐ BOOKMARK: ADD
 # ------------------------------------------------------
 @app.post("/api/bookmark")
-async def bookmark_book(book: dict):
+async def add_bookmark(book: dict):
     """
-    book = {
-        "user_id": "user_xyz",
+    {
+        "user_id": "...",
         "title": "...",
         "authors": [...],
         "thumbnail": "...",
@@ -140,24 +141,65 @@ async def bookmark_book(book: dict):
         "description": "..."
     }
     """
-    bookmarks = get_bookmarks_collection()
 
     if "user_id" not in book:
-        raise HTTPException(status_code=400, detail="user_id is required")
+        raise HTTPException(status_code=400, detail="user_id required")
 
-    bookmarks.insert_one(book)
-    return {"message": "Book added to bookmarks!"}
+    bookmarks = get_bookmarks_collection()
+    inserted = bookmarks.insert_one(book)
+
+    book["_id"] = str(inserted.inserted_id)
+    return {"message": "Book bookmarked!", "bookmark": book}
 
 
 # ------------------------------------------------------
-# ⭐ BOOKMARK: GET ALL FOR USER
+# ⭐ BOOKMARK: GET ALL
 # ------------------------------------------------------
 @app.get("/api/bookmarks/{user_id}")
-async def get_user_bookmarks(user_id: str):
+async def get_bookmarks(user_id: str):
     bookmarks = get_bookmarks_collection()
 
-    results = list(bookmarks.find({"user_id": user_id}, {"_id": 0}))
+    docs = list(bookmarks.find({"user_id": user_id}))
+    results = []
+
+    for d in docs:
+        d["_id"] = str(d["_id"])
+        results.append(d)
+
     return {"bookmarks": results}
+
+
+# ------------------------------------------------------
+# ⭐ BOOKMARK: REMOVE ONE
+# ------------------------------------------------------
+@app.delete("/api/bookmark/{user_id}/{bookmark_id}")
+async def remove_bookmark(user_id: str, bookmark_id: str):
+    bookmarks = get_bookmarks_collection()
+
+    try:
+        result = bookmarks.delete_one({
+            "_id": ObjectId(bookmark_id),
+            "user_id": user_id
+        })
+
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Bookmark not found")
+
+        return {"message": "Bookmark removed"}
+
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid bookmark ID")
+
+
+# ------------------------------------------------------
+# ⭐ BOOKMARK: CLEAR ALL
+# ------------------------------------------------------
+@app.delete("/api/bookmarks/clear/{user_id}")
+async def clear_bookmarks(user_id: str):
+    bookmarks = get_bookmarks_collection()
+    deleted = bookmarks.delete_many({"user_id": user_id})
+
+    return {"message": "All bookmarks cleared", "deleted": deleted.deleted_count}
 
 
 # ------------------------------------------------------
@@ -165,7 +207,7 @@ async def get_user_bookmarks(user_id: str):
 # ------------------------------------------------------
 @app.get("/")
 def root():
-    return {"message": "ShelfScanner API running with OCR + Bookmarks!"}
+    return {"message": "ShelfScanner API running with OCR + Bookmarks + Delete + Clear!"}
 
 
 # ------------------------------------------------------

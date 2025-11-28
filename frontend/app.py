@@ -7,7 +7,7 @@ st.set_page_config(page_title="ShelfScanner", page_icon="📚", layout="wide")
 API_BASE_URL = st.secrets["API_BASE_URL"]
 
 # ---------------------------------------------------
-# USER ID (stored once)
+# USER ID (stable per session)
 # ---------------------------------------------------
 if "user_id" not in st.session_state:
     st.session_state["user_id"] = "user_" + uuid.uuid4().hex[:8]
@@ -15,20 +15,15 @@ if "user_id" not in st.session_state:
 USER_ID = st.session_state["user_id"]
 
 # ---------------------------------------------------
-# SESSION STATE FIX (to stop losing scan results)
+# SESSION STATE (persistent page)
 # ---------------------------------------------------
-if "scanned_books" not in st.session_state:
-    st.session_state["scanned_books"] = []
-
-if "extracted_titles" not in st.session_state:
-    st.session_state["extracted_titles"] = []
-
-if "recommendations" not in st.session_state:
-    st.session_state["recommendations"] = []
+for key in ["scanned_books", "extracted_titles", "recommendations"]:
+    if key not in st.session_state:
+        st.session_state[key] = []
 
 
 # ---------------------------------------------------
-# CSS SECTION (unchanged)
+# CSS
 # ---------------------------------------------------
 st.markdown("""
 <style>
@@ -62,6 +57,26 @@ st.markdown("""
     cursor:pointer;
 }
 
+.remove-btn {
+    background:#ff5757;
+    padding:4px 8px;
+    border-radius:5px;
+    color:white;
+    font-size:12px;
+    cursor:pointer;
+}
+
+.clear-btn {
+    background:#d9534f;
+    padding:6px 10px;
+    border-radius:6px;
+    color:white;
+    font-weight:700;
+    text-align:center;
+    cursor:pointer;
+    margin-top:10px;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -74,15 +89,14 @@ st.markdown("<div class='separator'></div>", unsafe_allow_html=True)
 
 
 # ---------------------------------------------------
-# RIGHT SIDEBAR — BOOKMARKS
+# SIDEBAR — BOOKMARKS FULL FUNCTIONAL
 # ---------------------------------------------------
 with st.sidebar:
     st.header("⭐ Your Bookmarks")
 
     try:
-        resp = requests.get(f"{API_BASE_URL}/api/bookmarks/{USER_ID}", timeout=20)
-        bookmarks = resp.json().get("bookmarks", [])
-        
+        r = requests.get(f"{API_BASE_URL}/api/bookmarks/{USER_ID}", timeout=20)
+        bookmarks = r.json().get("bookmarks", [])
     except:
         bookmarks = []
 
@@ -90,28 +104,38 @@ with st.sidebar:
         for b in bookmarks:
             st.write(f"{b.get('title')}")
             st.caption(", ".join(b.get("authors", [])))
+
+            # REMOVE ONE BOOKMARK
+            if st.button("🗑 Remove", key=f"rm_{b['_id']}"):
+                requests.delete(
+                    f"{API_BASE_URL}/api/bookmark/{USER_ID}/{b['_id']}"
+                )
+                st.rerun()
+
+        # CLEAR ALL
+        if st.button("❌ Clear All Bookmarks", key="clear_all"):
+            requests.delete(f"{API_BASE_URL}/api/bookmarks/clear/{USER_ID}")
+            st.rerun()
+
     else:
         st.info("No bookmarks yet.")
 
 
 # ---------------------------------------------------
-# SEARCH BAR (This should NOT reset scan)
+# SEARCH BAR (Stable)
 # ---------------------------------------------------
 search = st.text_input(
     "🔍 Search scanned books",
     st.session_state.get("search_text", ""),
 )
-
-# Save search in session_state
 st.session_state["search_text"] = search
 
 
 # ---------------------------------------------------
-# UPLOAD BUTTON
+# UPLOAD
 # ---------------------------------------------------
-colL, colM, colR = st.columns([1,2,1])
-
-with colM:
+c1, c2, c3 = st.columns([1,2,1])
+with c2:
     uploaded_img = st.file_uploader("Upload bookshelf image", type=["jpg","jpeg","png"])
     scan_btn = st.button("🔎 Scan Shelf", use_container_width=True)
 
@@ -124,7 +148,6 @@ if uploaded_img and scan_btn:
     st.image(uploaded_img, caption="Uploaded Image", use_column_width=True)
 
     with st.spinner("Scanning your books... ⏳✨"):
-
         files = {"image": uploaded_img.getvalue()}
         res = requests.post(f"{API_BASE_URL}/api/scan", files=files, timeout=300)
 
@@ -132,38 +155,32 @@ if uploaded_img and scan_btn:
             st.error("API Error: " + res.text)
         else:
             data = res.json()
-
-            # STORE RESULTS IN SESSION STATE
             st.session_state["extracted_titles"] = data.get("extracted_titles", [])
             st.session_state["scanned_books"] = data.get("books_found", [])
             st.session_state["recommendations"] = data.get("recommended", [])
 
 
 # ---------------------------------------------------
-# SHOW SCAN RESULTS (persistent)
+# SHOW TITLES
 # ---------------------------------------------------
 if st.session_state["extracted_titles"]:
     st.subheader("📌 Extracted Titles")
     st.write(st.session_state["extracted_titles"])
-
     st.markdown("<div class='separator'></div>", unsafe_allow_html=True)
 
 
 # ---------------------------------------------------
-# DISPLAY BOOKS
+# DISPLAY BOOKS + SEARCH FILTER
 # ---------------------------------------------------
 books = st.session_state["scanned_books"]
-
-# Apply search filter
 if search:
-    books = [b for b in books if search.lower() in b.get("title", "").lower()]
+    books = [b for b in books if search.lower() in b.get("title","").lower()]
 
 st.subheader("📚 Books Found")
 
 if books:
     for book in books:
         st.markdown("<div class='book-card'>", unsafe_allow_html=True)
-
         c1, c2 = st.columns([1,4])
 
         with c1:
@@ -179,8 +196,8 @@ if books:
                 with st.expander("📘 Description"):
                     st.write(book["description"])
 
-            # ⭐ BOOKMARK BUTTON (NO RESET NOW)
-            if st.button(f"⭐ Bookmark '{book.get('title')}'", key=book.get("title")):
+            # ⭐ ADD BOOKMARK
+            if st.button(f"⭐ Bookmark", key=f"bk_{book.get('title')}"):
                 payload = {
                     "user_id": USER_ID,
                     "title": book.get("title"),
@@ -189,10 +206,9 @@ if books:
                     "categories": book.get("categories"),
                     "description": book.get("description"),
                 }
-
                 requests.post(f"{API_BASE_URL}/api/bookmark", json=payload)
-
                 st.success("Book added to bookmarks!")
+                st.rerun()
 
         st.markdown("</div>", unsafe_allow_html=True)
 
