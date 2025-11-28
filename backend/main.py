@@ -3,22 +3,17 @@ import uvicorn
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-import io
 import requests
 
 from db import get_books_collection
 from recommender import recommend_books
-
-# Google Vision API
-from google.cloud import vision
-from google.oauth2 import service_account
 
 load_dotenv()
 
 app = FastAPI()
 
 # ------------------------------------------------------
-# CORS
+# CORS (Allow Streamlit Frontend)
 # ------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
@@ -29,40 +24,38 @@ app.add_middleware(
 )
 
 # ------------------------------------------------------
-# GOOGLE VISION API SETUP
+# OCR.SPACE API SETUP
 # ------------------------------------------------------
-GOOGLE_CREDS_PATH = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+OCR_API_KEY = os.getenv("OCR_API_KEY")
 
-if not GOOGLE_CREDS_PATH:
-    raise Exception("❌ GOOGLE_APPLICATION_CREDENTIALS not set in Render variables!")
-
-credentials = service_account.Credentials.from_service_account_file(
-    GOOGLE_CREDS_PATH
-)
-vision_client = vision.ImageAnnotatorClient(credentials=credentials)
+if not OCR_API_KEY:
+    raise Exception("❌ OCR_API_KEY not found! Add it to Render environment variables.")
 
 
-# ------------------------------------------------------
-# OCR USING GOOGLE VISION API
-# ------------------------------------------------------
 def extract_text(image_bytes):
+    """
+    Extract text from image using OCR.Space Free Cloud API.
+    """
+    url = "https://api.ocr.space/parse/image"
+
     try:
-        image = vision.Image(content=image_bytes)
-        response = vision_client.text_detection(image=image)
+        response = requests.post(
+            url,
+            files={"file": ("image.jpg", image_bytes)},
+            data={"apikey": OCR_API_KEY, "language": "eng"},
+        )
 
-        if response.error.message:
-            print("❌ Vision API Error:", response.error.message)
+        result = response.json()
+
+        if result.get("IsErroredOnProcessing"):
+            print("OCR error:", result.get("ErrorMessage"))
             return ""
 
-        annotations = response.text_annotations
-        if not annotations:
-            return ""
-
-        # Full extracted text
-        return annotations[0].description
+        parsed = result["ParsedResults"][0]["ParsedText"]
+        return parsed
 
     except Exception as e:
-        print("❌ Vision OCR failed:", e)
+        print("❌ OCR.Space API failed:", e)
         return ""
 
 
@@ -93,12 +86,12 @@ def fetch_book_data(title):
         "authors": volume.get("authors"),
         "thumbnail": volume.get("imageLinks", {}).get("thumbnail"),
         "categories": volume.get("categories"),
-        "description": volume.get("description")
+        "description": volume.get("description"),
     }
 
 
 # ------------------------------------------------------
-# API: SCAN SHELF IMAGE
+# API: SCAN IMAGE
 # ------------------------------------------------------
 @app.post("/api/scan")
 async def scan_shelf(image: UploadFile = File(...)):
@@ -107,12 +100,14 @@ async def scan_shelf(image: UploadFile = File(...)):
 
     # 1. OCR text
     extracted = extract_text(image_bytes)
+
     if not extracted.strip():
         return {"error": "Could not extract text from image."}
 
-    # filter possible titles
+    # clean titles
     possible_titles = [
-        line.strip() for line in extracted.split("\n")
+        line.strip()
+        for line in extracted.split("\n")
         if len(line.strip()) > 3
     ]
 
@@ -131,26 +126,26 @@ async def scan_shelf(image: UploadFile = File(...)):
         for idx, _id in enumerate(ids):
             books[idx]["_id"] = str(_id)
 
-    # 4. Recommendations
+    # 4. Recommend books
     recommendations = recommend_books(books)
 
     return {
         "extracted_titles": possible_titles,
         "books_found": books,
-        "recommended": recommendations
+        "recommended": recommendations,
     }
 
 
 # ------------------------------------------------------
-# ROOT ROUTE
+# Root Test Route
 # ------------------------------------------------------
 @app.get("/")
 def root():
-    return {"message": "ShelfScanner API running successfully with Google Vision OCR!"}
+    return {"message": "ShelfScanner API running with OCR.Space Cloud OCR!"}
 
 
 # ------------------------------------------------------
-# LOCAL RUN
+# Local Dev
 # ------------------------------------------------------
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
