@@ -117,7 +117,7 @@ header, iframe, .stAppViewTabHeader {
 # TOGGLE BUTTON (JS WORKS INSIDE STREAMLIT NOW)
 # ---------------------------------------------------
 st.markdown("""
-<div class="theme-toggle" onclick="toggleTheme()">
+<div class="theme-toggle" id="themeToggle">
     <div class="theme-sun">☀</div>
     <div class="theme-moon">🌙</div>
     <div id="ball" class="theme-ball" style="transform: translateX(32px);">🌙</div>
@@ -125,30 +125,44 @@ st.markdown("""
 
 <script>
 
-// Get the actual Streamlit app container
-const appRoot = window.parent.document.querySelector('.stApp');
+// Streamlit shadow-root safe selector
+function getAppRoot() {
+    const frames = window.parent.document.getElementsByTagName("iframe");
+    for (let f of frames) {
+        try {
+            if (f.contentDocument.querySelector(".stApp")) {
+                return f.contentDocument.querySelector(".stApp");
+            }
+        } catch {}
+    }
+    return window.parent.document.querySelector(".stApp");
+}
 
-// Toggle theme function
 function toggleTheme() {
-    let ball = window.parent.document.getElementById("ball");
+    let root = getAppRoot();
+    let ball = document.getElementById("ball");
 
-    let theme = appRoot.getAttribute("data-theme");
+    let current = root.getAttribute("data-theme") || "dark";
 
-    if (!theme || theme === "dark") {
-        appRoot.setAttribute("data-theme","light");
+    if (current === "dark") {
+        root.setAttribute("data-theme", "light");
         ball.style.transform = "translateX(0px)";
         ball.innerHTML = "☀";
     } else {
-        appRoot.setAttribute("data-theme","dark");
+        root.setAttribute("data-theme", "dark");
         ball.style.transform = "translateX(32px)";
         ball.innerHTML = "🌙";
     }
 }
 
-// Set DARK as default theme
+// Attach click listener safely
 setTimeout(() => {
-    appRoot.setAttribute("data-theme","dark");
-}, 200);
+    document.getElementById("themeToggle").onclick = toggleTheme;
+
+    // default theme
+    let root = getAppRoot();
+    root.setAttribute("data-theme","dark");
+}, 400);
 
 </script>
 """, unsafe_allow_html=True)
