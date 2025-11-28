@@ -13,7 +13,7 @@ load_dotenv()
 app = FastAPI()
 
 # ------------------------------------------------------
-# CORS (Allow Streamlit Frontend)
+# CORS (Streamlit frontend allowed)
 # ------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
@@ -34,8 +34,8 @@ if not OCR_API_KEY:
 
 def extract_text(image_bytes):
     """
-    Extract text from image using OCR.Space Free Cloud API.
-    Optimized for bookshelf images.
+    Extract text using OCR.Space Free Cloud API.
+    (Only allowed parameters used to avoid errors)
     """
     url = "https://api.ocr.space/parse/image"
 
@@ -44,16 +44,13 @@ def extract_text(image_bytes):
             "file": ("image.jpg", image_bytes, "image/jpeg")
         }
 
+        # ⚠ Only VALID OCR.Space parameters
         data = {
             "apikey": OCR_API_KEY,
             "language": "eng",
-
-            # 🔥 Most important parameters:
-            "OCREngine": 2,        # Better accuracy
-            "scale": True,         # Auto-scale small images
-            "isTable": False,
-            "detectOrientation": True,
-            "rotateAutomatically": True,
+            "isOverlayRequired": False,
+            "scale": True,
+            "OCREngine": 2     # Best accuracy allowed in free tier
         }
 
         response = requests.post(url, files=files, data=data)
@@ -65,7 +62,7 @@ def extract_text(image_bytes):
             print("❌ OCR Error:", result.get("ErrorMessage"))
             return ""
 
-        parsed = result.get("ParsedResults", [])
+        parsed = result.get("ParsedResults")
         if not parsed:
             return ""
 
@@ -122,7 +119,7 @@ async def scan_shelf(image: UploadFile = File(...)):
     if not extracted.strip():
         return {"error": "Could not extract text from image."}
 
-    # Process lines
+    # Clean & split lines
     possible_titles = [
         line.strip()
         for line in extracted.split("\n")
@@ -144,7 +141,7 @@ async def scan_shelf(image: UploadFile = File(...)):
         for idx, _id in enumerate(ids):
             books[idx]["_id"] = str(_id)
 
-    # 4. Recommend books
+    # 4. Recommendations
     recommendations = recommend_books(books)
 
     return {
