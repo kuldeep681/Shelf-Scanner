@@ -16,11 +16,12 @@ app = FastAPI()
 # CORS (Allow Streamlit Frontend)
 # ------------------------------------------------------
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    CORSMiddleware(
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 )
 
 # ------------------------------------------------------
@@ -35,24 +36,42 @@ if not OCR_API_KEY:
 def extract_text(image_bytes):
     """
     Extract text from image using OCR.Space Free Cloud API.
+    Optimized for bookshelf images.
     """
     url = "https://api.ocr.space/parse/image"
 
     try:
-        response = requests.post(
-            url,
-            files={"file": ("image.jpg", image_bytes)},
-            data={"apikey": OCR_API_KEY, "language": "eng"},
-        )
+        files = {
+            "file": ("image.jpg", image_bytes, "image/jpeg")
+        }
 
+        data = {
+            "apikey": OCR_API_KEY,
+            "language": "eng",
+
+            # 🔥 Most important parameters:
+            "OCREngine": 2,        # Better accuracy
+            "scale": True,         # Auto-scale small images
+            "isTable": False,
+            "detectOrientation": True,
+            "rotateAutomatically": True,
+        }
+
+        response = requests.post(url, files=files, data=data)
         result = response.json()
 
+        print("OCR RESPONSE:", result)
+
         if result.get("IsErroredOnProcessing"):
-            print("OCR error:", result.get("ErrorMessage"))
+            print("❌ OCR Error:", result.get("ErrorMessage"))
             return ""
 
-        parsed = result["ParsedResults"][0]["ParsedText"]
-        return parsed
+        parsed = result.get("ParsedResults", [])
+        if not parsed:
+            return ""
+
+        text = parsed[0].get("ParsedText", "")
+        return text.strip()
 
     except Exception as e:
         print("❌ OCR.Space API failed:", e)
@@ -104,7 +123,7 @@ async def scan_shelf(image: UploadFile = File(...)):
     if not extracted.strip():
         return {"error": "Could not extract text from image."}
 
-    # clean titles
+    # Process lines
     possible_titles = [
         line.strip()
         for line in extracted.split("\n")
