@@ -122,14 +122,16 @@ with st.sidebar:
 
 
 # ---------------------------------------------------
-# SEARCH BAR (Stable)
+# SEARCH BAR — only appears after scanning
 # ---------------------------------------------------
-search = st.text_input(
-    "🔍 Search scanned books",
-    st.session_state.get("search_text", ""),
-)
-st.session_state["search_text"] = search
-
+if st.session_state["scanned_books"]:
+    search = st.text_input(
+        "🔍 Search scanned books",
+        st.session_state.get("search_text", "")
+    )
+    st.session_state["search_text"] = search
+else:
+    search = ""
 
 # ---------------------------------------------------
 # UPLOAD
