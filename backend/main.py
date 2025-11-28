@@ -1,16 +1,17 @@
 import os
 import uvicorn
-from fastapi import FastAPI, UploadFile, File, Request
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from PIL import Image
-import easyocr
-import numpy as np
 import io
 import requests
 
 from db import get_books_collection
 from recommender import recommend_books
+
+# Google Vision API
+from google.cloud import vision
+from google.oauth2 import service_account
 
 load_dotenv()
 
@@ -28,38 +29,45 @@ app.add_middleware(
 )
 
 # ------------------------------------------------------
-# GLOBAL EASYOCR READER (Loaded once → Fast!)
+# GOOGLE VISION API SETUP
 # ------------------------------------------------------
-reader = easyocr.Reader(["en"], gpu=False)
+GOOGLE_CREDS_PATH = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
+if not GOOGLE_CREDS_PATH:
+    raise Exception("❌ GOOGLE_APPLICATION_CREDENTIALS not set in Render variables!")
+
+credentials = service_account.Credentials.from_service_account_file(
+    GOOGLE_CREDS_PATH
+)
+vision_client = vision.ImageAnnotatorClient(credentials=credentials)
 
 
 # ------------------------------------------------------
-# FAST OCR FUNCTION (No Tesseract, Resize Image)
+# OCR USING GOOGLE VISION API
 # ------------------------------------------------------
 def extract_text(image_bytes):
-
-    # Load image
-    img = Image.open(io.BytesIO(image_bytes))
-
-    # Resize to speed up OCR
-    max_size = 1024
-    img.thumbnail((max_size, max_size), Image.LANCZOS)
-
-    img_np = np.array(img)
-
-    # OCR
     try:
-        result = reader.readtext(img_np, detail=0)
-        text = "\n".join(result)
-        print("Extracted text:", text)
-        return text
+        image = vision.Image(content=image_bytes)
+        response = vision_client.text_detection(image=image)
+
+        if response.error.message:
+            print("❌ Vision API Error:", response.error.message)
+            return ""
+
+        annotations = response.text_annotations
+        if not annotations:
+            return ""
+
+        # Full extracted text
+        return annotations[0].description
+
     except Exception as e:
-        print("❌ EasyOCR failed:", e)
+        print("❌ Vision OCR failed:", e)
         return ""
 
 
 # ------------------------------------------------------
-# Google Books API
+# GOOGLE BOOKS API
 # ------------------------------------------------------
 GOOGLE_BOOKS_API_KEY = os.getenv("GOOGLE_BOOKS_API_KEY", "")
 
@@ -90,18 +98,19 @@ def fetch_book_data(title):
 
 
 # ------------------------------------------------------
-# API: Scan Shelf Image
+# API: SCAN SHELF IMAGE
 # ------------------------------------------------------
 @app.post("/api/scan")
 async def scan_shelf(image: UploadFile = File(...)):
 
     image_bytes = await image.read()
 
-    # 1. Extract OCR text
+    # 1. OCR text
     extracted = extract_text(image_bytes)
     if not extracted.strip():
         return {"error": "Could not extract text from image."}
 
+    # filter possible titles
     possible_titles = [
         line.strip() for line in extracted.split("\n")
         if len(line.strip()) > 3
@@ -133,15 +142,15 @@ async def scan_shelf(image: UploadFile = File(...)):
 
 
 # ------------------------------------------------------
-# Root Route
+# ROOT ROUTE
 # ------------------------------------------------------
 @app.get("/")
 def root():
-    return {"message": "ShelfScanner API running successfully!"}
+    return {"message": "ShelfScanner API running successfully with Google Vision OCR!"}
 
 
 # ------------------------------------------------------
-# Run Server (local only)
+# LOCAL RUN
 # ------------------------------------------------------
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
