@@ -68,10 +68,10 @@ body[data-theme="light"] {
 /* FIXED FLOATING TOGGLE BUTTON */
 .theme-toggle {
     position: fixed;
-    top: 60px;
+    top: 80px;
     left: 20px;
-    width: 72px;
-    height: 34px;
+    width: 78px;
+    height: 36px;
     border-radius: 50px;
     background: #2b2d3a;
     cursor: pointer;
@@ -79,12 +79,16 @@ body[data-theme="light"] {
     align-items: center;
     justify-content: flex-start;
     padding: 4px;
-    z-index: 9999999;
+    z-index: 999999999;
+    pointer-events: auto:
     box-shadow: 0 3px 6px rgba(0,0,0,0.4);
 }
+header, iframe, .stAppViewTabHeader {
+    pointer-events: none !important;
+}
 .theme-ball {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     background: white;
     border-radius: 50%;
     display: flex;
