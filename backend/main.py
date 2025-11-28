@@ -44,13 +44,13 @@ def extract_text(image_bytes):
             "file": ("image.jpg", image_bytes, "image/jpeg")
         }
 
-        # ⚠ Only VALID OCR.Space parameters
+
         data = {
             "apikey": OCR_API_KEY,
             "language": "eng",
             "isOverlayRequired": False,
             "scale": True,
-            "OCREngine": 2     # Best accuracy allowed in free tier
+            "OCREngine": 2     
         }
 
         response = requests.post(url, files=files, data=data)
