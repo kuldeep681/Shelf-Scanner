@@ -299,11 +299,12 @@ Session persists until browser close.
 
 ---
 
-📩 Support
+## 📩 **Support**
 
 If you face issues, feel free to reach out:
 
-###📧 **Your Email Here:** kuldeepmandal175514@gmail.com
-###🐛 **Open a GitHub Issue**
+### 📧 **Email :** kuldeepmandal175514@gmail.com
+
+### 🐛 **Open a GitHub Issue**
 
 ---
