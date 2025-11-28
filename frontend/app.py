@@ -68,10 +68,10 @@ body[data-theme="light"] {
 /* FIXED FLOATING TOGGLE BUTTON */
 .theme-toggle {
     position: fixed;
-    top: 10px;
-    left: 12px;
-    width: 68px;
-    height: 32px;
+    top: 60px;
+    left: 20px;
+    width: 72px;
+    height: 34px;
     border-radius: 50px;
     background: #2b2d3a;
     cursor: pointer;
@@ -79,18 +79,18 @@ body[data-theme="light"] {
     align-items: center;
     justify-content: flex-start;
     padding: 4px;
-    z-index: 99999;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    z-index: 9999999;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4);
 }
 .theme-ball {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     background: white;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 18px;
     transition: transform .3s;
 }
 .theme-sun {position:absolute; left:10px; opacity:0.3;}
