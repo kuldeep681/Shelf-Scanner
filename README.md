@@ -20,7 +20,7 @@ ShelfScanner reads the entire bookshelf image, detects titles, fetches data, rec
 
 ## ✨ **Key Features**
 
-### 📸 **AI Shelf Scanner**
+## 📸 **AI Shelf Scanner**
 
 - Upload a photo of a bookshelf
 
@@ -28,13 +28,13 @@ ShelfScanner reads the entire bookshelf image, detects titles, fetches data, rec
 
 - Automatically fetches details using Google Books API
 
-### 🔍 **Smart Search**
+## 🔍 **Smart Search**
 
 - Search instantly through scanned books
 
 - Instant filtering without reloading the page
 
-### ⭐ **Bookmarks (No Login Required!)**
+## ⭐ **Bookmarks (No Login Required!)**
 
 - Add books to "Your Bookmarks"
 
@@ -46,12 +46,12 @@ ShelfScanner reads the entire bookshelf image, detects titles, fetches data, rec
 
 - Bookmarks stored in MongoDB per user session
 
-### 🧠 **Simple Recommendations**
+## 🧠 **Simple Recommendations**
 
 Basic content-based recommendation using categories + authors.
 Lightweight and fast — no heavy ML required.
 
-### 💛 **Beautiful UI**
+## 💛 **Beautiful UI**
 
 - Animated golden header
 
@@ -67,7 +67,7 @@ Lightweight and fast — no heavy ML required.
 
 ## 🧰 **Tech Stack**
 
-**- Frontend**
+## **- Frontend**
 
 - Streamlit
 
@@ -75,7 +75,7 @@ Lightweight and fast — no heavy ML required.
 
 - Custom CSS (animated gradients, styled cards)
 
-**- Backend**
+## **- Backend**
 
 - FastAPI
 
@@ -85,17 +85,17 @@ Lightweight and fast — no heavy ML required.
 
 - Google Books API
 
-**- Database**
+## **- Database**
 
 - MongoDB Atlas
 
-**- Collections:**
+## **- Collections:**
 
 - books
 
 - bookmarks
 
-**- Other Tools**
+## **- Other Tools**
 
 - UUID for user-based session IDs
 
@@ -109,48 +109,56 @@ Lightweight and fast — no heavy ML required.
 shelfscanner/
 │
 ├── backend/
-│ ├── main.py # FastAPI backend + OCR + Routes
-│ ├── db.py # MongoDB connection + collections
-│ ├── recommender.py # Book recommendation logic
-│ ├── requirements.txt # Python packages for backend
+│     ├── main.py            # FastAPI backend + OCR + API routes
+│     ├── db.py              # MongoDB connection + collections
+│     ├── recommender.py     # Recommendation logic
+│     ├── requirements.txt   # Backend dependencies
 │
 ├── frontend/
-│ ├── app.py # Streamlit UI
-│ ├── requirements.txt # Python packages for frontend
+│     ├── .streamlit/        # Streamlit config (secrets.toml)
+│     ├── app.py             # Streamlit UI
+│     ├── requirements.txt   # Frontend dependencies
 │
 ├── .gitignore
-├── README.md # This file
-└── images/ # (Optional) Screenshots for README
+└── README.md                # Project documentation
 ```
 
 ---
 
-🛠 Local Development Setup
+## 🛠 **Local Development Setup**
 
 Follow this to run the app locally.
 
 ---
 
-🔧 1. Clone the Repository
+## 🔧 1. Clone the Repository
 
-git clone <repo-url>
+```bash
+git clone (https://github.com/kuldeep681/Shelf-Scanner.git)
 cd shelfscanner
+```
 
 ---
 
-🐍 2. Backend Setup (FastAPI)
+## 🐍 2. Backend Setup (FastAPI)\*\*
 
-Navigate:
+**Navigate:**
 
+```bash
 cd backend
+```
 
-Install dependencies:
+**Install dependencies:**
 
+```bash
 pip install -r requirements.txt
+```
 
-Run FastAPI:
+**Run FastAPI:**
 
+```bash
 uvicorn main:app --reload --port 8000
+```
 
 FastAPI will run at:
 
@@ -158,19 +166,25 @@ FastAPI will run at:
 
 ---
 
-🖥 3. Frontend Setup (Streamlit)
+## 🖥 **3. Frontend Setup (Streamlit)**
 
-Navigate:
+**Navigate:**
 
-cd ../frontend
+```bash
+cd frontend
+```
 
-Install dependencies:
+**Install dependencies:**
 
+```bash
 pip install -r requirements.txt
+```
 
-Run Streamlit:
+**Run Streamlit:**
 
+```bash
 streamlit run app.py
+```
 
 Streamlit will run at:
 
@@ -178,13 +192,13 @@ Streamlit will run at:
 
 ---
 
-🌐 Global Deployment
+## 🌐 **Global Deployment**
 
-You deployed using Render (Backend) + Streamlit Cloud (Frontend).
+I deployed using Render (Backend) + Streamlit Cloud (Frontend).
 
 ---
 
-🚀 A. Deploy Backend on Render
+**🚀 A. Deploy Backend on Render**
 
 1. Push code to GitHub
 
@@ -196,13 +210,17 @@ Select your repo
 
 Start command:
 
+```bash
 uvicorn main:app --host 0.0.0.0 --port $PORT
+```
 
 3. Add Environment Variables
 
+```bash
 OCR_API_KEY=your_api_key
 GOOGLE_BOOKS_API_KEY=your_api_key
 MONGODB_URI=your_mongodb_uri
+```
 
 4. Deploy
 
@@ -214,7 +232,7 @@ Use this in Streamlit secrets.
 
 ---
 
-🚀 B. Deploy Frontend on Streamlit Cloud
+**🚀 B. Deploy Frontend on Streamlit Cloud**
 
 1. Go to share.streamlit.io
 
@@ -222,7 +240,9 @@ Use this in Streamlit secrets.
 
 3. Add secrets:
 
+```bash
 API_BASE_URL="https://your-backend.onrender.com"
+```
 
 4. Deploy
 
@@ -230,60 +250,52 @@ Streamlit gives a link like:
 
 👉 https://your-shelfscanner.streamlit.app
 
-Paste this link at the top of README.
-
 ---
 
-🔐 Environment Variables Summary
+## 🔐 \*_Environment Variables Summary_
 
 Backend .env / Render Variables
 
+```bash
 OCR_API_KEY=xxxx
 GOOGLE_BOOKS_API_KEY=xxxx
 MONGODB_URI=xxxx
+```
 
 Frontend Streamlit Secrets
 
+```bash
 API_BASE_URL="https://your-backend.onrender.com"
+```
 
 ---
 
-🧠 How It Works (Simplified)
+## 🧠 **How It Works (Simplified)**
 
-1️⃣ OCR detects titles
+1️⃣ **OCR detects titles**
 
 Using OCR.Space API → returns extracted text.
 
-2️⃣ Text filtered into possible book names
+2️⃣ **Text filtered into possible book names**
 
 Simple line-based filtering.
 
-3️⃣ Google Books API fetches metadata
+3️⃣ **Google Books API fetches metadata**
 
 Title → authors → categories → thumbnail → description.
 
-4️⃣ Recommendations generated
+4️⃣ **Recommendations generated**
 
 Uses category + author similarity.
 
-5️⃣ User bookmarks stored
+5️⃣ **User bookmarks stored**
 
 Each user = a unique session ID saved in Streamlit memory.
 
-6️⃣ Bookmarks saved in MongoDB
+6️⃣ **Bookmarks saved in MongoDB**
 
 No login required.
 Session persists until browser close.
-
----
-
-🌟 Screenshots & Demo
-
-(Add your screenshots here later — via GitHub issues or local images)
-
-Example placeholder:
-
-![App Screenshot](https://raw.githubusercontent.com/<your-username>/<repo>/main/images/screenshot1.png)
 
 ---
 
@@ -291,33 +303,7 @@ Example placeholder:
 
 If you face issues, feel free to reach out:
 
-📧 Your Email Here
-🐛 Open a GitHub Issue
+###📧 **Your Email Here:** kuldeepmandal175514@gmail.com
+###🐛 **Open a GitHub Issue**
 
 ---
-
-❤ Built With Love
-
-This project was created to help make discovering books easier, faster, and more enjoyable.
-
----
-
-✅ Your README is now:
-
-✔ Beautiful
-✔ Creative
-✔ Detailed
-✔ Easy to understand
-✔ Includes folder structure
-✔ Includes deployment instructions
-✔ Includes code snippets
-
----
-
-If you want, I can also create:
-✔ A badge-section (Python / FastAPI / Streamlit / MongoDB)
-✔ GIF demo
-✔ A professional logo
-✔ Auto-generated docs
-
-Just tell me!
