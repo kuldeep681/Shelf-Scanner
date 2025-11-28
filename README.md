@@ -9,7 +9,7 @@ A modern, fast, AI-powered bookshelf scanner built using **FastAPI + Streamlit +
 
 ---
 
-## 🎯 Why ShelfScanner?
+## 🎯 **Why ShelfScanner?**
 
 Standing in front of a huge bookshelf, but don’t know any book?
 ShelfScanner reads the entire bookshelf image, detects titles, fetches data, recommends books, and lets you bookmark your favourites — all in one smooth workflow.
@@ -46,12 +46,12 @@ ShelfScanner reads the entire bookshelf image, detects titles, fetches data, rec
 
 - Bookmarks stored in MongoDB per user session
 
-🧠 Simple Recommendations
+**🧠 Simple Recommendations**
 
 Basic content-based recommendation using categories + authors.
 Lightweight and fast — no heavy ML required.
 
-💛 Beautiful UI
+**💛 Beautiful UI**
 
 Animated golden header
 
