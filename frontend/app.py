@@ -81,17 +81,22 @@ with st.sidebar:
 
     try:
         resp = requests.get(f"{API_BASE_URL}/api/bookmarks/{USER_ID}", timeout=20)
+
+        # 🔥 DEBUG LINE — SHOW EXACT RESPONSE FROM BACKEND
+        st.write("DEBUG RESPONSE:", resp.json())
+
         bookmarks = resp.json().get("bookmarks", [])
-    except:
+
+    except Exception as e:
+        st.write("DEBUG ERROR:", e)
         bookmarks = []
 
     if bookmarks:
         for b in bookmarks:
-            st.write(f"{b.get('title')}")
+            st.write(f"📘 {b.get('title')}")
             st.caption(", ".join(b.get("authors", [])))
     else:
         st.info("No bookmarks yet.")
-
 
 # ---------------------------------------------------
 # SEARCH BAR (This should NOT reset scan)
