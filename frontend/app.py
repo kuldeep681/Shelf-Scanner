@@ -1,13 +1,12 @@
 import streamlit as st
 import requests
-from PIL import Image
 
 st.set_page_config(page_title="ShelfScanner", page_icon="📚", layout="wide")
 
 API_BASE_URL = st.secrets["API_BASE_URL"]
 
 # ---------------------------------------------------
-# GLOBAL CSS (Fix toggle, remove purple box)
+# GLOBAL CSS (UI + Colors + Toggle Button)
 # ---------------------------------------------------
 st.markdown("""
 <style>
@@ -18,10 +17,10 @@ st.markdown("""
     --dark-bg: #0d1117;
 }
 
-/* CLEAN STREAMLIT PADDING */
+/* remove Streamlit extra padding */
 section.main > div {padding-top: 0 !important;}
 
-/* DARK / LIGHT BACKGROUND */
+/* DARK / LIGHT THEMING */
 body[data-theme="dark"] {
     background-color: var(--dark-bg) !important;
     color: #eee !important;
@@ -31,7 +30,7 @@ body[data-theme="light"] {
     color: #000 !important;
 }
 
-/* YELLOW LINE */
+/* Yellow separator line */
 .separator {
     width: 100%;
     height: 3px;
@@ -39,12 +38,12 @@ body[data-theme="light"] {
     margin: 25px 0;
 }
 
-/* Animated header */
+/* HERO ANIMATED TEXT */
 .hero {
     font-size: 55px;
     font-weight: 900;
     text-align: center;
-    margin-top: 5px;
+    margin-top: 10px;
     background: linear-gradient(90deg, #ffdd00, #ff9900, #ffdd00);
     background-size: 300%;
     -webkit-background-clip: text;
@@ -56,36 +55,44 @@ body[data-theme="light"] {
     100% { background-position: 300%; }
 }
 
-/* Book card */
+/* Book card UI */
 .book-card {
     border-radius: 15px;
     padding: 18px;
-    margin-bottom: 10px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
 }
 
-/* FIXED FLOATING TOGGLE BUTTON */
+/* ------------------------------
+   CUSTOM TOGGLE BUTTON (SUN/MOON)
+--------------------------------*/
 .theme-toggle {
     position: fixed;
-    top: 80px;
+    top: 70px;    /* moved down so it's visible */
     left: 20px;
     width: 78px;
     height: 36px;
     border-radius: 50px;
     background: #2b2d3a;
     cursor: pointer;
+
     display: flex;
     align-items: center;
     justify-content: flex-start;
     padding: 4px;
-    z-index: 999999999;
-    pointer-events: auto:
-    box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+
+    z-index: 999999999 !important;
+    pointer-events: auto !important;
+
+    box-shadow: 0 3px 8px rgba(0,0,0,0.45);
 }
+
+/* prevent Streamlit header from blocking button */
 header, iframe, .stAppViewTabHeader {
     pointer-events: none !important;
 }
+
 .theme-ball {
     width: 32px;
     height: 32px;
@@ -97,23 +104,32 @@ header, iframe, .stAppViewTabHeader {
     font-size: 18px;
     transition: transform .3s;
 }
-.theme-sun {position:absolute; left:10px; opacity:0.3;}
-.theme-moon {position:absolute; right:10px; opacity:1;}
+
+.theme-sun  { position: absolute; left: 10px; opacity: 0.3; }
+.theme-moon { position: absolute; right: 10px; opacity: 1; }
 
 </style>
 """, unsafe_allow_html=True)
 
+
+
 # ---------------------------------------------------
-# TOGGLE BUTTON (JS works correctly in Streamlit)
+# TOGGLE BUTTON (JS WORKS INSIDE STREAMLIT NOW)
 # ---------------------------------------------------
 st.markdown("""
+<div class="theme-toggle" onclick="toggleTheme()">
+    <div class="theme-sun">☀</div>
+    <div class="theme-moon">🌙</div>
+    <div id="ball" class="theme-ball" style="transform: translateX(32px);">🌙</div>
+</div>
+
 <script>
 
-// Always get the correct parent document
+// Correctly target parent document
 const bodyEl = window.parent.document.querySelector("body");
-const ballEl = window.parent.document.getElementById("ball");
 
 function toggleTheme() {
+    let ballEl = window.parent.document.getElementById("ball");
 
     let current = bodyEl.getAttribute("data-theme");
 
@@ -129,39 +145,48 @@ function toggleTheme() {
     }
 }
 
-// Force default theme ONCE
+// Force default theme once
 setTimeout(() => {
     bodyEl.setAttribute("data-theme","dark");
-}, 100);
+}, 200);
 
 </script>
 """, unsafe_allow_html=True)
+
+
 # ---------------------------------------------------
 # HEADER
 # ---------------------------------------------------
 st.markdown("<div class='hero'>📚 ShelfScanner</div>", unsafe_allow_html=True)
 st.markdown("<div class='separator'></div>", unsafe_allow_html=True)
 
+
 # ---------------------------------------------------
 # SEARCH BAR
 # ---------------------------------------------------
 search = st.text_input("🔍 Search scanned books", "")
 
+
 # ---------------------------------------------------
-# UPLOAD SECTION
+# IMAGE UPLOAD + SCAN UI
 # ---------------------------------------------------
-c1, c2, c3 = st.columns([1,2,1])
-with c2:
-    uploaded_img = st.file_uploader("Upload bookshelf image", type=["jpg","jpeg","png"])
+center = st.columns([1,2,1])[1]
+
+with center:
+    uploaded_img = st.file_uploader("Upload bookshelf image", type=["jpg", "jpeg", "png"])
     scan_btn = st.button("🔎 Scan Shelf", use_container_width=True)
 
+
+
 # ---------------------------------------------------
-# SCAN LOGIC
+# SCANNING PROCESS
 # ---------------------------------------------------
 if uploaded_img and scan_btn:
+
     st.image(uploaded_img, caption="Uploaded Image", use_column_width=True)
 
-    with st.spinner("Scanning... ⏳✨"):
+    with st.spinner("Scanning your bookshelf... ⏳✨"):
+
         try:
             files = {"image": uploaded_img.getvalue()}
             res = requests.post(f"{API_BASE_URL}/api/scan", files=files, timeout=300)
@@ -171,26 +196,27 @@ if uploaded_img and scan_btn:
 
             data = res.json()
 
-            # Titles
+            # ------------------- Extracted Titles -------------------
             st.subheader("📌 Extracted Titles")
             st.write(data.get("extracted_titles", []))
 
             st.markdown("<div class='separator'></div>", unsafe_allow_html=True)
 
-            # Books Found
+            # ------------------- Books Found -------------------
             st.subheader("📚 Books Found")
             books = data.get("books_found", [])
 
             if books:
                 for book in books:
                     st.markdown("<div class='book-card'>", unsafe_allow_html=True)
-                    col1, col2 = st.columns([1,4])
 
-                    with col1:
+                    colA, colB = st.columns([1,4])
+
+                    with colA:
                         if book.get("thumbnail"):
-                            st.image(book["thumbnail"], width=100)
+                            st.image(book["thumbnail"], width=110)
 
-                    with col2:
+                    with colB:
                         st.markdown(f"### {book.get('title')}")
                         st.write("*Authors:*", book.get("authors"))
                         st.write("*Categories:*", book.get("categories"))
@@ -200,19 +226,20 @@ if uploaded_img and scan_btn:
                                 st.write(book["description"])
 
                     st.markdown("</div>", unsafe_allow_html=True)
+
             else:
                 st.warning("No matching books found.")
 
-            # Recommendations
+            # ------------------- Recommended Books -------------------
             st.subheader("⭐ Recommended Books")
             recs = data.get("recommended", [])
 
             if recs:
                 for r in recs:
-                    st.write(f"### {r['title']}")
+                    st.write(f"### {r.get('title')}")
                     st.write(r.get("authors"))
             else:
-                st.info("No recommendations yet.")
+                st.info("No recommendations yet — scan more books!")
 
         except Exception as e:
             st.error(f"Error: {e}")
