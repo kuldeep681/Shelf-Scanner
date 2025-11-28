@@ -107,32 +107,35 @@ header, iframe, .stAppViewTabHeader {
 # TOGGLE BUTTON (JS works correctly in Streamlit)
 # ---------------------------------------------------
 st.markdown("""
-<div class="theme-toggle" onclick="toggleTheme()">
-    <div class="theme-sun">☀</div>
-    <div class="theme-moon">🌙</div>
-    <div id="ball" class="theme-ball" style="transform: translateX(32px);">🌙</div>
-</div>
-
 <script>
-function toggleTheme() {
-    let body = window.parent.document.body;
-    let ball = window.parent.document.getElementById("ball");
 
-    if (body.getAttribute("data-theme") === "dark") {
-        body.setAttribute("data-theme", "light");
-        ball.style.transform = "translateX(0px)";
-        ball.innerHTML = "☀";
-    } else {
-        body.setAttribute("data-theme", "dark");
-        ball.style.transform = "translateX(32px)";
-        ball.innerHTML = "🌙";
+// Always get the correct parent document
+const bodyEl = window.parent.document.querySelector("body");
+const ballEl = window.parent.document.getElementById("ball");
+
+function toggleTheme() {
+
+    let current = bodyEl.getAttribute("data-theme");
+
+    if (!current || current === "dark") {
+        bodyEl.setAttribute("data-theme","light");
+        ballEl.style.transform = "translateX(0px)";
+        ballEl.innerHTML = "☀";
+    } 
+    else {
+        bodyEl.setAttribute("data-theme","dark");
+        ballEl.style.transform = "translateX(32px)";
+        ballEl.innerHTML = "🌙";
     }
 }
 
-window.parent.document.body.setAttribute("data-theme","dark");
+// Force default theme ONCE
+setTimeout(() => {
+    bodyEl.setAttribute("data-theme","dark");
+}, 100);
+
 </script>
 """, unsafe_allow_html=True)
-
 # ---------------------------------------------------
 # HEADER
 # ---------------------------------------------------
