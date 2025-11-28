@@ -14,13 +14,13 @@ A modern, fast, AI-powered bookshelf scanner built using **FastAPI + Streamlit +
 Standing in front of a huge bookshelf, but don’t know any book?
 ShelfScanner reads the entire bookshelf image, detects titles, fetches data, recommends books, and lets you bookmark your favourites — all in one smooth workflow.
 
-**Just upload → scan → explore.**
+**_Just upload → scan → explore._**
 
 ---
 
-## ✨ Key Features
+## ✨ **Key Features**
 
-**📸 AI Shelf Scanner**
+### 📸 **AI Shelf Scanner**
 
 - Upload a photo of a bookshelf
 
@@ -28,13 +28,13 @@ ShelfScanner reads the entire bookshelf image, detects titles, fetches data, rec
 
 - Automatically fetches details using Google Books API
 
-**🔍 Smart Search**
+### 🔍 **Smart Search**
 
 - Search instantly through scanned books
 
 - Instant filtering without reloading the page
 
-**⭐ Bookmarks (No Login Required!)**
+### ⭐ **Bookmarks (No Login Required!)**
 
 - Add books to "Your Bookmarks"
 
@@ -46,66 +46,66 @@ ShelfScanner reads the entire bookshelf image, detects titles, fetches data, rec
 
 - Bookmarks stored in MongoDB per user session
 
-**🧠 Simple Recommendations**
+### 🧠 **Simple Recommendations**
 
 Basic content-based recommendation using categories + authors.
 Lightweight and fast — no heavy ML required.
 
-**💛 Beautiful UI**
+### 💛 **Beautiful UI**
 
-Animated golden header
+- Animated golden header
 
-Yellow separators
+- Yellow separators
 
-Clean card layout
+- Clean card layout
 
-Sidebar showing real-time bookmarks
+- Sidebar showing real-time bookmarks
 
-Fully responsive layout
-
----
-
-🧰 Tech Stack
-
-Frontend
-
-Streamlit
-
-Python
-
-Custom CSS (animated gradients, styled cards)
-
-Backend
-
-FastAPI
-
-Python
-
-OCR.Space API (for OCR extraction)
-
-Google Books API
-
-Database
-
-MongoDB Atlas
-
-Collections:
-
-books
-
-bookmarks
-
-Other Tools
-
-UUID for user-based session IDs
-
-Requests library for API communication
+- Fully responsive layout
 
 ---
 
-📁 Project Folder Structure
+## 🧰 **Tech Stack**
 
-shelfscanner/
+**- Frontend**
+
+- Streamlit
+
+- Python
+
+- Custom CSS (animated gradients, styled cards)
+
+**- Backend**
+
+- FastAPI
+
+- Python
+
+- OCR.Space API (for OCR extraction)
+
+- Google Books API
+
+**- Database**
+
+- MongoDB Atlas
+
+**- Collections:**
+
+- books
+
+- bookmarks
+
+**- Other Tools**
+
+- UUID for user-based session IDs
+
+- Requests library for API communication
+
+---
+
+## 📁 **Project Folder Structure**
+
+```shelfscanner/
 │
 ├── backend/
 │ ├── main.py # FastAPI backend + OCR + Routes
@@ -120,6 +120,7 @@ shelfscanner/
 ├── .gitignore
 ├── README.md # This file
 └── images/ # (Optional) Screenshots for README
+```
 
 ---
 
