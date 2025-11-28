@@ -1,0 +1,43 @@
+# --- Python ---
+_pycache_/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Virtual environments ---
+env/
+venv/
+.shelfscanner/
+.shelfscanner-env/
+*.conda/
+
+# --- Environment variables ---
+.env
+backend/.env
+frontend/.env
+
+# --- Streamlit secrets (DON'T PUSH!) ---
+frontend/.streamlit/secrets.toml
+
+# --- VS Code ---
+.vscode/
+.settings/
+
+# --- System files ---
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Build artifacts ---
+*.log
+*.sqlite
+*.db
+*.model
+
+# --- Render or deployment ---
+*.pid
+
+# --- Images/uploads ---
+uploads/
+
+frontend/.streamlit/secrets.toml
