@@ -8,7 +8,7 @@ st.set_page_config(page_title="ShelfScanner", page_icon="📚", layout="centered
 # -------------------------------
 # API Base URL (local or cloud)
 # -------------------------------
-API_BASE_URL = st.secrets.get("API_BASE_URL") if "API_BASE_URL" in st.secrets else "http://127.0.0.1:8000"
+API_BASE_URL = st.secrets["API_BASE_URL"]
 
 st.title("📚 ShelfScanner")
 st.write("Upload a shelf image and extract book information automatically.")
