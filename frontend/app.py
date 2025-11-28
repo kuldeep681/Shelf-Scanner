@@ -34,7 +34,7 @@ if uploaded_file:
                 response = requests.post(
                     f"{API_BASE_URL}/api/scan",
                     files=files,
-                    timeout=300
+                    timeout=400
                 )
 
                 if response.status_code != 200:
