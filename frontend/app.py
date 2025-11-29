@@ -136,7 +136,7 @@ with colM:
 # ---------------------------------------------------
 if uploaded_img and scan_btn:
 
-    st.image(uploaded_img, caption="Uploaded Image", use_container_width=True)
+    st.image(uploaded_img, caption="Uploaded Image")
 
     with st.spinner("Scanning your books... ⏳✨"):
 
