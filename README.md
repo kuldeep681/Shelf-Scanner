@@ -4,8 +4,8 @@
 
 A modern, fast, AI-powered bookshelf scanner built using **FastAPI + Streamlit + MongoDB** with OCR-based text extraction and a beautiful user interface.
 
-**👉 LIVE DEMO:** https://shelf-scanner1122.streamlit.app/  
-**👉 GitHub Repo:** https://github.com/kuldeep681/Shelf-Scanner
+**👉 LIVE DEMO:** [https://shelf-scanner1122.streamlit.app/ ](https://shelf-scanner1122.streamlit.app/ ) 
+**👉 GitHub Repo:** [https://github.com/kuldeep681/Shelf-Scanner](https://github.com/kuldeep681/Shelf-Scanner)
 
 ---
 
