@@ -226,7 +226,7 @@ MONGODB_URI=your_mongodb_uri
 
 Render gives your backend URL like:
 
-👉 https://your-backend.onrender.com
+👉 [https://your-backend.onrender.com](https://your-backend.onrender.com)
 
 Use this in Streamlit secrets.
 
@@ -248,7 +248,7 @@ API_BASE_URL="https://your-backend.onrender.com"
 
 Streamlit gives a link like:
 
-👉 https://your-shelfscanner.streamlit.app
+👉 [https://your-shelfscanner.streamlit.app](https://your-shelfscanner.streamlit.app)
 
 ---
 
@@ -303,7 +303,7 @@ Session persists until browser close.
 
 If you face issues, feel free to reach out:
 
-### 📧 **Email :** kuldeepmandal175514@gmail.com
+### 📧 **Email :** [kuldeepmandal175514@gmail.com](mailto:kuldeepmandal175514@gmail.com)
 
 ### 🐛 **Open a GitHub Issue**
 
